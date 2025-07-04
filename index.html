@@ -53,8 +53,10 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80vw;
-            height: 60vh;
+            width: calc(100vw - 580px);
+            height: calc(100vh - 200px);
+            min-width: 600px;
+            min-height: 400px;
             max-width: 1000px;
             max-height: 600px;
             z-index: 50;
@@ -140,6 +142,8 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             pointer-events: auto;
             z-index: 150;
+            max-height: 70vh;
+            overflow-y: auto;
         }
 
         .sidebar-section {
@@ -212,8 +216,7 @@
         #controls {
             position: absolute;
             bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 20px;
             background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 30, 30, 0.9));
             padding: 25px;
             border-radius: 20px;
@@ -222,6 +225,7 @@
             backdrop-filter: blur(15px);
             border: 2px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            max-width: 280px;
         }
 
         .control-btn {
@@ -411,9 +415,16 @@
             grid-row: 3;
         }
 
-        @media (max-width: 1200px) {
+        @media (max-width: 1000px) {
             #sidebar {
                 display: none;
+            }
+            
+            #gameCanvas {
+                width: calc(100vw - 320px);
+                height: calc(100vh - 180px);
+                min-width: 500px;
+                min-height: 350px;
             }
         }
 
@@ -431,12 +442,20 @@
                 font-size: 14px;
             }
 
+            #gameCanvas {
+                width: calc(100vw - 40px);
+                height: calc(100vh - 300px);
+                min-width: 300px;
+                min-height: 250px;
+                max-width: none;
+                max-height: none;
+            }
+
             #controls {
                 bottom: 10px;
-                padding: 15px;
-                left: 10px;
                 right: 10px;
-                transform: none;
+                padding: 15px;
+                max-width: 250px;
             }
 
             .control-btn {
@@ -460,6 +479,26 @@
 
             .stat-value {
                 font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #controls {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
+            
+            #gameCanvas {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 280px);
+                min-width: 280px;
+                min-height: 200px;
+            }
+            
+            .direction-controls {
+                max-width: 180px;
             }
         }
     </style>
