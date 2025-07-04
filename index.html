@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 3D抓娃娃游戏 - 梦幻游乐场</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            overflow: hidden;
+            color: white;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="stars" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.3)"/></pattern></defs><rect width="100" height="100" fill="url(%23stars)"/></svg>');
+            animation: twinkle 3s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.8; }
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            display: block;
+            cursor: grab;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 60vh;
+            max-width: 1000px;
+            max-height: 600px;
+            z-index: 50;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        #gameCanvas:active {
+            cursor: grabbing;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #topBar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: auto;
+            z-index: 200;
+        }
+
+        #gameInfo {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 30, 30, 0.9));
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        #gameStats {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 30, 30, 0.9));
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 180px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        #sidebar {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            width: 250px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 30, 30, 0.9));
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+            z-index: 150;
+        }
+
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+
+        .sidebar-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #4CAF50;
+            border-bottom: 2px solid rgba(76, 175, 80, 0.3);
+            padding-bottom: 5px;
+        }
+
+        .sidebar-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-section li {
+            padding: 5px 0;
+            font-size: 14px;
+            opacity: 0.9;
+            border-left: 3px solid rgba(76, 175, 80, 0.5);
+            padding-left: 10px;
+            margin-bottom: 5px;
+        }
+
+        .reward-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reward-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            border-left: 3px solid rgba(255, 215, 0, 0.6);
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section h4 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #667eea;
+            text-align: center;
+        }
+
+        .control-hint {
+            margin-top: 15px;
+            font-size: 12px;
+            opacity: 0.7;
+            text-align: center;
+            font-style: italic;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(102, 126, 234, 0.3); }
+            100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(102, 126, 234, 0.6); }
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 30, 30, 0.9));
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            pointer-events: auto;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            margin: 5px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95) translateY(0);
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        #grabBtn {
+            background: linear-gradient(135deg, #ff6b6b, #ff5252);
+            font-size: 18px;
+            padding: 20px 40px;
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        #grabBtn:hover {
+            background: linear-gradient(135deg, #ff5252, #ff6b6b);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.6);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* 游戏标题美化 */
+        .game-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: rainbow 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .game-title.show {
+            opacity: 1;
+        }
+
+        @keyframes rainbow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* 粒子效果 */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 3s linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        #score {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #status {
+            font-size: 16px;
+            opacity: 0.9;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+            font-weight: 500;
+        }
+
+        .direction-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .direction-controls .control-btn {
+            width: 55px;
+            height: 55px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .direction-controls .control-btn:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .direction-controls .control-btn:nth-child(1) {
+            grid-column: 2;
+        }
+
+        .direction-controls .control-btn:nth-child(2) {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .direction-controls .control-btn:nth-child(3) {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .direction-controls .control-btn:nth-child(4) {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        @media (max-width: 1200px) {
+            #sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #topBar {
+                flex-direction: column;
+                gap: 15px;
+                top: 10px;
+                left: 10px;
+                right: 10px;
+            }
+
+            #gameInfo, #gameStats {
+                padding: 15px;
+                font-size: 14px;
+            }
+
+            #controls {
+                bottom: 10px;
+                padding: 15px;
+                left: 10px;
+                right: 10px;
+                transform: none;
+            }
+
+            .control-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+
+            .direction-controls .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .stat-item {
+                min-width: auto;
+            }
+
+            .stat-label {
+                font-size: 12px;
+            }
+
+            .stat-value {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div class="game-title" id="gameTitle">🎮 梦幻抓娃娃 🎪</div>
+            
+            <!-- 顶部信息栏 -->
+            <div id="topBar">
+                <div id="gameInfo">
+                    <div id="score">🏆 得分: 0</div>
+                    <div id="status">🎯 使用方向键移动机械臂</div>
+                </div>
+                
+                <div id="gameStats">
+                    <div class="stat-item">
+                        <span class="stat-label">🎪 娃娃数量</span>
+                        <span class="stat-value" id="toyCount">12</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">⏰ 游戏时间</span>
+                        <span class="stat-value" id="gameTime">00:00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 侧边栏 -->
+            <div id="sidebar">
+                <div class="sidebar-section">
+                    <h3>🎯 抓取技巧</h3>
+                    <ul>
+                        <li>观察娃娃位置</li>
+                        <li>精确定位机械臂</li>
+                        <li>选择合适时机</li>
+                        <li>抓取较轻的娃娃</li>
+                    </ul>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>🏆 奖励分数</h3>
+                    <div class="reward-list">
+                        <div class="reward-item">🐻 小熊: 10分</div>
+                        <div class="reward-item">🐰 兔子: 15分</div>
+                        <div class="reward-item">🦆 小鸭: 12分</div>
+                        <div class="reward-item">🐱 小猫: 18分</div>
+                        <div class="reward-item">🐷 小猪: 14分</div>
+                        <div class="reward-item">🐼 熊猫: 25分</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="controls">
+                <div class="control-section">
+                    <h4>🎮 移动控制</h4>
+                    <div class="direction-controls">
+                        <button class="control-btn" id="upBtn">↑</button>
+                        <button class="control-btn" id="leftBtn">←</button>
+                        <button class="control-btn" id="rightBtn">→</button>
+                        <button class="control-btn" id="downBtn">↓</button>
+                    </div>
+                </div>
+                <button class="control-btn" id="grabBtn">🎯 抓取</button>
+                <div class="control-hint">💡 提示: 使用WASD或方向键移动</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js库 -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <!-- Cannon.js物理引擎 - 使用cdnjs的稳定版本 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"
+            onerror="console.error('Cannon.js CDN加载失败，请检查网络')"></script>
+    <!-- 游戏主脚本 -->
+    <script src="game.js"></script>
+</body>
+</html>
